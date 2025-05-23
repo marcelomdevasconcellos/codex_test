@@ -3,6 +3,8 @@ from django.contrib.admin.sites import AdminSite
 from unittest import mock
 import builtins
 import sys
+from datetime import date
+from decimal import Decimal
 
 from .models import Customer, Contract, Service, Invoice, InvoiceItem
 from .admin import ContractAdmin, InvoiceAdmin, InvoiceItemAdminInline
@@ -66,6 +68,7 @@ class ManageTests(SimpleTestCase):
 
 from io import StringIO
 from django.core.management import call_command
+from core.management.commands.generate_invoices import Command
 
 
 class FakeDataCommandTests(TestCase):
@@ -87,8 +90,15 @@ class FakeDataCommandTests(TestCase):
 class InvoiceTests(TestCase):
     def test_str_and_admin_integration(self):
         customer = Customer.objects.create(name="Cust", email="cust@example.com")
+        contract = Contract.objects.create(
+            customer=customer,
+            contract_number="C001",
+            start_date="2025-01-01",
+            end_date="2025-12-31",
+        )
         invoice = Invoice.objects.create(
             customer=customer,
+            contract=contract,
             reference_date="2025-05",
             total_amount=100,
             status=Invoice.WAITING,
@@ -107,3 +117,37 @@ class InvoiceTests(TestCase):
         self.assertIn(InvoiceItemAdminInline, invoice_admin.inlines)
         inline_instance = InvoiceItemAdminInline(InvoiceItem, admin_site)
         self.assertEqual(inline_instance.model, InvoiceItem)
+
+
+class GenerateInvoicesCommandTests(TestCase):
+    def test_command_creates_invoices_without_duplicates(self):
+        customer = Customer.objects.create(name="AC", email="ac@example.com")
+        contract = Contract.objects.create(
+            customer=customer,
+            contract_number="C100",
+            start_date=date(2024, 1, 15),
+            end_date=date(2024, 4, 30),
+        )
+        Service.objects.create(contract=contract, name="SVC", value=Decimal("31"))
+
+        target_today = date(2024, 3, 15)
+
+        with mock.patch("core.management.commands.generate_invoices.date") as mock_date:
+            mock_date.today.return_value = target_today
+            call_command("generate_invoices")
+
+        invoices = Invoice.objects.filter(contract=contract).order_by("reference_date")
+        self.assertEqual(invoices.count(), 3)
+        self.assertEqual([inv.reference_date for inv in invoices], ["2024-01", "2024-02", "2024-03"])
+        self.assertEqual([item.service_amount for item in invoices[0].items.all()], [Decimal("17")])
+        self.assertEqual(invoices[1].total_amount, Decimal("31"))
+
+        with mock.patch("core.management.commands.generate_invoices.date") as mock_date:
+            mock_date.today.return_value = target_today
+            call_command("generate_invoices")
+
+        self.assertEqual(Invoice.objects.filter(contract=contract).count(), 3)
+
+    def test_next_month_helper(self):
+        cmd = Command()
+        self.assertEqual(cmd._next_month(date(2024, 12, 1)), date(2025, 1, 1))
