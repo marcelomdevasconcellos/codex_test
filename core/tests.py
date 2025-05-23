@@ -4,8 +4,8 @@ from unittest import mock
 import builtins
 import sys
 
-from .models import Customer, Contract, Service
-from .admin import ContractAdmin
+from .models import Customer, Contract, Service, Invoice, InvoiceItem
+from .admin import ContractAdmin, InvoiceAdmin, InvoiceItemAdminInline
 from manage import main as manage_main
 
 
@@ -82,3 +82,28 @@ class FakeDataCommandTests(TestCase):
                 service_total = contract.services.count()
                 self.assertIn(service_total, (3, 4))
                 self.assertLess(contract.start_date, contract.end_date)
+
+
+class InvoiceTests(TestCase):
+    def test_str_and_admin_integration(self):
+        customer = Customer.objects.create(name="Cust", email="cust@example.com")
+        invoice = Invoice.objects.create(
+            customer=customer,
+            reference_date="2025-05",
+            total_amount=100,
+            status=Invoice.WAITING,
+        )
+        item = InvoiceItem.objects.create(
+            invoice=invoice,
+            service_name="Consulting",
+            service_amount=100,
+        )
+
+        self.assertEqual(str(invoice), "Invoice Cust 2025-05")
+        self.assertEqual(str(item), "Consulting")
+
+        admin_site = AdminSite()
+        invoice_admin = InvoiceAdmin(Invoice, admin_site)
+        self.assertIn(InvoiceItemAdminInline, invoice_admin.inlines)
+        inline_instance = InvoiceItemAdminInline(InvoiceItem, admin_site)
+        self.assertEqual(inline_instance.model, InvoiceItem)

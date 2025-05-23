@@ -37,3 +37,41 @@ class Service(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Invoice(models.Model):
+    """Billing information for a single customer and reference month."""
+
+    WAITING = "waiting"
+    PAID = "paid"
+    STATUS_CHOICES = [
+        (WAITING, "Waiting for payment"),
+        (PAID, "Paid"),
+    ]
+
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="invoices",
+    )
+    reference_date = models.CharField(max_length=7)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+
+    def __str__(self):
+        return f"Invoice {self.customer} {self.reference_date}"
+
+
+class InvoiceItem(models.Model):
+    """Individual service line within an invoice."""
+
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+    service_name = models.CharField(max_length=200)
+    service_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.service_name
