@@ -54,6 +54,13 @@ class Invoice(models.Model):
         on_delete=models.CASCADE,
         related_name="invoices",
     )
+    contract = models.ForeignKey(
+        Contract,
+        on_delete=models.CASCADE,
+        related_name="invoices",
+        null=True,
+        blank=True,
+    )
     reference_date = models.CharField(max_length=7)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
