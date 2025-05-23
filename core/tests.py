@@ -63,3 +63,22 @@ class ManageTests(SimpleTestCase):
             with self.assertRaises(ImportError):
                 manage_main()
 
+
+from io import StringIO
+from django.core.management import call_command
+
+
+class FakeDataCommandTests(TestCase):
+    def test_command_creates_expected_objects(self):
+        out = StringIO()
+        call_command('generate_fake_data', stdout=out)
+        self.assertIn('Fake data generated.', out.getvalue())
+        self.assertEqual(Customer.objects.count(), 10)
+        for customer in Customer.objects.all():
+            contract_total = customer.contracts.count()
+            self.assertGreaterEqual(contract_total, 1)
+            self.assertLessEqual(contract_total, 5)
+            for contract in customer.contracts.all():
+                service_total = contract.services.count()
+                self.assertIn(service_total, (3, 4))
+                self.assertLess(contract.start_date, contract.end_date)
