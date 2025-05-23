@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Customer, Contract, Service
+from .models import Customer, Contract, Service, Invoice, InvoiceItem
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
@@ -34,4 +34,21 @@ class ServiceAdmin(admin.ModelAdmin):
         'name',
         'value',
     )
+
+
+class InvoiceItemAdminInline(admin.TabularInline):
+    model = InvoiceItem
+    extra = 0
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'customer',
+        'reference_date',
+        'total_amount',
+        'status',
+    )
+    inlines = [InvoiceItemAdminInline]
 
