@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Customer, Contract
+from .models import Customer, Contract, Service
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
@@ -16,5 +16,15 @@ class ContractAdmin(admin.ModelAdmin):
         'contract_number',
         'start_date',
         'end_date',
+    )
+
+
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'contract',
+        'name',
+        'value',
     )
 

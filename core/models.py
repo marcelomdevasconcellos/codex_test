@@ -22,3 +22,18 @@ class Contract(models.Model):
 
     def __str__(self):
         return self.contract_number
+
+
+class Service(models.Model):
+    """Services offered within a contract."""
+
+    contract = models.ForeignKey(
+        Contract,
+        on_delete=models.CASCADE,
+        related_name="services",
+    )
+    name = models.CharField(max_length=200)
+    value = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return self.name
