@@ -14,9 +14,16 @@ class ContractAdmin(admin.ModelAdmin):
         'id',
         'customer',
         'contract_number',
+        'service_count',
         'start_date',
         'end_date',
     )
+
+    def service_count(self, obj):
+        """Return the number of services linked to the contract."""
+        return obj.services.count()
+
+    service_count.short_description = "Services"
 
 
 @admin.register(Service)
