@@ -1,2 +1,8 @@
 venv/
 .idea/
+__pycache__/
+core/__pycache__/
+erp_project/__pycache__/
+core/migrations/__pycache__/
+.coverage
+htmlcov/
